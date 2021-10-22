@@ -88,15 +88,15 @@ def createCornerLatLng(sheet_r):
             coords = f['geometry']['coordinates'][0]
             break
 
-    # TODO Sort corners_pixels
-    corners = [
-      # {'location': [corners_latLng['x_west_edge'], corners_latLng['y_north_edge']], 'pixel': corners_pixels[0]},
-      {'location': coords[0], 'pixel': corners_pixels[0]},
-      {'location': coords[1], 'pixel': corners_pixels[1]},
-      {'location': coords[2], 'pixel': corners_pixels[2]},
-      {'location': coords[3], 'pixel': corners_pixels[3]}
-    ]
-    # TODO Save corners
+        # TODO Sort corners_pixels
+        corners = [
+          # {'location': [corners_latLng['x_west_edge'], corners_latLng['y_north_edge']], 'pixel': corners_pixels[0]},
+          {'location': coords[0], 'pixel': corners_pixels[0]},
+          {'location': coords[1], 'pixel': corners_pixels[1]},
+          {'location': coords[2], 'pixel': corners_pixels[2]},
+          {'location': coords[3], 'pixel': corners_pixels[3]}
+        ]
+        # TODO Save corners
     return corners
 
 def createGcps(coords):
@@ -143,13 +143,14 @@ def createGeoTiff(path):
 tiffpaths = os.listdir('./OS_tiffs')
 
 for path in tiffpaths:
-    print(path)
-    sheet_ref = path.replace('OS_old_series_1_63360_', '').replace('.tif', '')
-    extractMap(path)
-    corners = createCornerLatLng(sheet_ref)
-    gcps = createGcps(corners)
-    addGcps(path, gcps)
-    createGeoTiff(path)
+    if not path.startswith('.'): 
+        print(path)
+        sheet_ref = path.replace('OS_old_series_1_63360_', '').replace('.tif', '')
+        extractMap(path)
+        corners = createCornerLatLng(sheet_ref)
+        gcps = createGcps(corners)
+        addGcps(path, gcps)
+        createGeoTiff(path)
 
 shutil.rmtree('./OS_tiffs_gcps/')
 shutil.rmtree('./OS_gcps/')
