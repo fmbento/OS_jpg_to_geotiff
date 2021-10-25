@@ -1,7 +1,11 @@
 # gdal must match system gdal
 # gdainfo --version
 # pip install gdal==2.4
-import gdal
+#  Example, GDAL 2.4, Python 3.8, Windows x64
+#    Download the wheel from https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal -- GDAL-2.4.1-cp38-cp38-win_amd64.whl 
+#    python -m pip install c:\temp\GDAL-2.4.1-cp38-cp38-win_amd64.whl --user
+
+import gdal #recent versions of Python: from osgeo import gdal
 import osr
 import shutil
 import os
@@ -12,6 +16,9 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 # pip install pillow
 from PIL import Image, ImageTk, ImageDraw
+
+# bypass error: "PIL.Image.DecompressionBombError: Image size (211225084 pixels) exceeds limit of 178956970 pixels, could be decompression bomb DOS attack."
+Image.MAX_IMAGE_PIXELS = None
 
 def createDir(path):
     if not os.path.exists(path):
