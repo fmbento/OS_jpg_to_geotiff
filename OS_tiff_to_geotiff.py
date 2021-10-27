@@ -1,12 +1,7 @@
 # gdal must match system gdal
 # gdainfo --version
 # pip install gdal==2.4
-#  Example, GDAL 2.4, Python 3.8, Windows x64
-#    Download the wheel from https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal -- GDAL-2.4.1-cp38-cp38-win_amd64.whl 
-#    python -m pip install c:\temp\GDAL-2.4.1-cp38-cp38-win_amd64.whl --user
-
-import gdal #recent versions of Python: from osgeo import gdal
-import osr
+from osgeo import gdal,osr
 import shutil
 import os
 import json
@@ -16,8 +11,6 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 # pip install pillow
 from PIL import Image, ImageTk, ImageDraw
-
-# bypass error: "PIL.Image.DecompressionBombError: Image size (211225084 pixels) exceeds limit of 178956970 pixels, could be decompression bomb DOS attack."
 Image.MAX_IMAGE_PIXELS = None
 
 def createDir(path):
@@ -28,6 +21,7 @@ createDir('./OS_gcps/')
 createDir('./OS_tiffs_gcps/')
 createDir('./OS_geotiffs/')
 createDir('./OS_tiffs_cut/')
+
 
 # Extract the map area
 def extractMap(path):
@@ -54,14 +48,21 @@ def extractMap(path):
         # print("opening %s" % File)
         img = Image.open('./OS_tiffs/' + path)
         imgTk = ImageTk.PhotoImage(Image.open('./OS_tiffs/' + path))
-        canvas.create_image(0,0,image=imgTk,anchor="nw")
+        canvas.create_image(0,0,image=imgTk,anchor="nw") #won't work if anchor is not "nw" -- it will produce a null image -- we need it to be sw (1st point)
         canvas.config(scrollregion=canvas.bbox(ALL))
 
         global corners_pixels
         corners_pixels = []
-
+		
         #function to be called when mouse is clicked
         def printcoords(event):
+            #Python 3.8 doesn't support match-case, only 3.10+
+            if len(corners_pixels) == 0:
+                canvas.yview_moveto('0.03')
+            elif len(corners_pixels) == 1:
+                canvas.xview_moveto('0.97')
+            elif len(corners_pixels) == 2:
+                canvas.yview_moveto('0.9')		
             #outputting x and y coords to console
             cx, cy = event2canvas(event, canvas)
             print ("(%d, %d) / (%d, %d)" % (event.x,event.y,cx,cy))
@@ -82,28 +83,37 @@ def extractMap(path):
                     rgb.save('./OS_tiffs_cut/' + path, 'TIFF', resolution=100.0)
                     root.destroy()
 
-    #mouseclick event
+	
+    canvas.xview_moveto('0.03') #we need it to be sw (1st point), not nw
+    canvas.yview_moveto('0.9') #we need it to be sw (1st point), not nw
+	
     canvas.bind("<ButtonPress-1>",printcoords)
+    #canvas.place(relx = 0.0,rely = 1.0, anchor ='sw')
     # canvas.bind("<ButtonRelease-1>",printcoords)
     root.mainloop()
 
-OS_coords = json.load(open('./One_Inch_Old_Series_England_Wales.geojson'))
+
+OS_coords = json.load(open('./25_inch_GB_geojson.json'))
 
 def createCornerLatLng(sheet_r):
+    corners = []
     for f in OS_coords['features']:
-        if f['properties']['Name'] == sheet_r:
-            coords = f['geometry']['coordinates'][0]
-            break
+        if f['properties']['SHEET_NO'] == sheet_r:
+            coords = f['geometry']['coordinates'][0][0]
+            print(coords)
+			
+            #break
 
         # TODO Sort corners_pixels
-        corners = [
-          # {'location': [corners_latLng['x_west_edge'], corners_latLng['y_north_edge']], 'pixel': corners_pixels[0]},
-          {'location': coords[0], 'pixel': corners_pixels[0]},
-          {'location': coords[1], 'pixel': corners_pixels[1]},
-          {'location': coords[2], 'pixel': corners_pixels[2]},
-          {'location': coords[3], 'pixel': corners_pixels[3]}
-        ]
-        # TODO Save corners
+            corners = [
+              # {'location': [corners_latLng['x_west_edge'], corners_latLng['y_north_edge']], 'pixel': corners_pixels[0]},
+              {'location': coords[0], 'pixel': corners_pixels[0]},
+              {'location': coords[1], 'pixel': corners_pixels[1]},
+              {'location': coords[2], 'pixel': corners_pixels[2]},
+              {'location': coords[3], 'pixel': corners_pixels[3]}
+            ]
+            print(corners)
+            # TODO Save corners
     return corners
 
 def createGcps(coords):
@@ -150,9 +160,16 @@ def createGeoTiff(path):
 tiffpaths = os.listdir('./OS_tiffs')
 
 for path in tiffpaths:
-    if not path.startswith('.'): 
+    if not path.startswith('.'):
         print(path)
-        sheet_ref = path.replace('OS_old_series_1_63360_', '').replace('.tif', '')
+        #sheet_ref = path.replace('OS_Yorkshire_25_001_', '').replace('.tif', '')
+        sheet_no = [(x.split('.')[0]) for x in path.split('_')[4:]]
+        if len(sheet_no) ==2: 
+            sheet_no = str(sheet_no[0]).zfill(3)+'_'+str(sheet_no[1]).zfill(2)
+        else:
+            sheet_no = '_'.join(sheet_no)
+        sheet_ref = sheet_no
+        print(sheet_ref)
         extractMap(path)
         corners = createCornerLatLng(sheet_ref)
         gcps = createGcps(corners)
