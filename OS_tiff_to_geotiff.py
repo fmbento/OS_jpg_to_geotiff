@@ -1,6 +1,10 @@
 # gdal must match system gdal
 # gdainfo --version
 # pip install gdal==2.4
+#  It seems to work with gdal 3.2.2 (most recent one, pip install gdal==3.2.2)
+#  If it is necessary to run another version, example, GDAL 2.4, Python 3.8, Windows x64
+#   1) Download the wheel from https://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal -- GDAL-2.4.1-cp38-cp38-win_amd64.whl 
+#   2) python -m pip install c:\temp\GDAL-2.4.1-cp38-cp38-win_amd64.whl --user
 from osgeo import gdal,osr
 import shutil
 import os
@@ -22,7 +26,6 @@ createDir('./OS_tiffs_gcps/')
 createDir('./OS_geotiffs/')
 createDir('./OS_tiffs_cut/')
 
-
 # Extract the map area
 def extractMap(path):
     event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
@@ -30,14 +33,14 @@ def extractMap(path):
         root = Tk()
 
         #setting up a tkinter canvas with scrollbars
-        frame = Frame(root, width=1500, height=1000, bd=2, relief=SUNKEN)
+        frame = Frame(root, width=1850, height=980, bd=2, relief=SUNKEN)
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
         xscroll = Scrollbar(frame, orient=HORIZONTAL)
         xscroll.grid(row=1, column=0, sticky=E+W)
         yscroll = Scrollbar(frame)
         yscroll.grid(row=0, column=1, sticky=N+S)
-        canvas = Canvas(frame, bd=0, width=1500, height=1000, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
+        canvas = Canvas(frame, bd=0, width=1850, height=980, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
         canvas.grid(row=0, column=0, sticky=N+S+E+W)
         xscroll.config(command=canvas.xview)
         yscroll.config(command=canvas.yview)
@@ -53,22 +56,23 @@ def extractMap(path):
 
         global corners_pixels
         corners_pixels = []
-		
+
         #function to be called when mouse is clicked
         def printcoords(event):
-            #Python 3.8 doesn't support match-case, only 3.10+
-            if len(corners_pixels) == 0:
-                canvas.yview_moveto('0.03')
-            elif len(corners_pixels) == 1:
-                canvas.xview_moveto('0.97')
-            elif len(corners_pixels) == 2:
-                canvas.yview_moveto('0.9')		
             #outputting x and y coords to console
             cx, cy = event2canvas(event, canvas)
             print ("(%d, %d) / (%d, %d)" % (event.x,event.y,cx,cy))
             if [cx,cy] not in corners_pixels:
                 print(len(corners_pixels))
                 corners_pixels.append([cx,cy])
+				#Python 3.8 doesn't support match-case, only 3.10+
+				#Fixing the issue with the wrong coordinates: we should one jump to the next corner AFTER storing the value of the current one :) -- what it does the line above.
+                if len(corners_pixels) == 1:
+                    canvas.yview_moveto('0.03')
+                elif len(corners_pixels) == 2:
+                    canvas.xview_moveto('0.97')
+                elif len(corners_pixels) == 3:
+                    canvas.yview_moveto('0.9')		
                 if len(corners_pixels) > 3:
                     # Cut map from image border
                     mask=Image.new('L', img.size, color=0)
@@ -83,15 +87,14 @@ def extractMap(path):
                     rgb.save('./OS_tiffs_cut/' + path, 'TIFF', resolution=100.0)
                     root.destroy()
 
-	
-    canvas.xview_moveto('0.03') #we need it to be sw (1st point), not nw
-    canvas.yview_moveto('0.9') #we need it to be sw (1st point), not nw
-	
+	#we need it to be sw (1st point), not nw
+    canvas.xview_moveto('0.03') 
+    canvas.yview_moveto('0.9') 
+
+    #mouseclick event
     canvas.bind("<ButtonPress-1>",printcoords)
-    #canvas.place(relx = 0.0,rely = 1.0, anchor ='sw')
     # canvas.bind("<ButtonRelease-1>",printcoords)
     root.mainloop()
-
 
 OS_coords = json.load(open('./25_inch_GB_geojson.json'))
 
@@ -101,7 +104,7 @@ def createCornerLatLng(sheet_r):
         if f['properties']['SHEET_NO'] == sheet_r:
             coords = f['geometry']['coordinates'][0][0]
             print(coords)
-			
+
             #break
 
         # TODO Sort corners_pixels
