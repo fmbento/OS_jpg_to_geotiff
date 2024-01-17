@@ -8,7 +8,7 @@ GDAL must match system gdal.
 gdainfo --version.
 `pip install gdal==2.4`.
 
-### Jpg files prep -- Skip is using TIFF files
+### Jpg files prep -- Skip if using TIFF files
 Add jpg files to a new folder called `./OS_jpgs`. Jpgs are found here https://commons.wikimedia.org/wiki/Category:Ordnance_Survey_Old/First_series_England_and_Wales_1:63360_
 
 Ensure the files are named with the map sheet number at the end and in the following format `OS_old_series_1_63360_8.jpg`. See One_Inch_Old_Series_England_Wales.geojson `properties['Name']` value.
